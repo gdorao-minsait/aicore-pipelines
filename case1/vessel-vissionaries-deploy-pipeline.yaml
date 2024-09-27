@@ -48,4 +48,4 @@ spec:
               protocol: TCP
           env:
             - name: STORAGE_URI
-              value: "{{inputs.artifacts.cvmodel}}"
+              value: "/path/to/your/artifact"

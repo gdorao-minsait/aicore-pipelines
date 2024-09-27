@@ -34,7 +34,7 @@ spec:
         maxReplicas: 5
         containers:
         - name: kserve-container
-          image: "docker.io/gdoraominsait/vessel-visionaries-detect:0.0.1"
+          image: "docker.io/python:latest"
           ports:
             - containerPort: 9001
               protocol: TCP

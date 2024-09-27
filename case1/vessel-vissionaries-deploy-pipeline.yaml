@@ -7,10 +7,6 @@ metadata:
     scenarios.ai.sap.com/name: "vessel-vissionaries-deploy-scenario"
     executables.ai.sap.com/description: "Inference executable for image classification"
     executables.ai.sap.com/name: "vessel-vissionaries-deploy-exec"
-    artifacts.ai.sap.com/cvmodel.kind: "model"
-    artifacts.ai.sap.com/cvmodel.description: "CV model"
-    artifacts.ai.sap.com/cvmodel.labels: | 
-        {"ext.ai.sap.com/customkey1":"customvalue1", "ext.ai.sap.com/customkey2":"customvalue2"}
   labels:
     scenarios.ai.sap.com/id: "vessel-vissionaries-deploy"
     ai.sap.com/version: "1.0.0"
@@ -21,8 +17,6 @@ spec:
          default: value
          type: string
          description: model name
-    artifacts:
-      - name: cvmodel
   template:
     apiVersion: "serving.kserve.io/v1beta1"
     metadata:
@@ -46,6 +40,3 @@ spec:
               protocol: TCP
             - containerPort: 8000
               protocol: TCP
-          env:
-            - name: STORAGE_URI
-              value: "{{inputs.artifacts.cvmodel}}"

@@ -9,7 +9,7 @@ metadata:
     executables.ai.sap.com/name: "vessel-vissionaries-deploy-exec"
   labels:
     scenarios.ai.sap.com/id: "vessel-vissionaries-deploy"
-    ai.sap.com/version: "1.0.0"
+    ai.sap.com/version: "1.0.1"
 spec:
   inputs:
     parameters: 

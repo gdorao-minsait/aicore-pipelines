@@ -39,7 +39,6 @@ spec:
         minReplicas: 0
         maxReplicas: 5
         containers:
-        - name: vessel-vissionaries-detect-serve-container
         - name: kserve-container
           image: "docker.io/gdoraominsait/vessel-visionaries-detect:0.0.1"
           ports:

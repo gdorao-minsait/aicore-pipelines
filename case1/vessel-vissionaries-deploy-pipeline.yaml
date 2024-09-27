@@ -30,7 +30,7 @@ spec:
       predictor:
         imagePullSecrets:
         - name: case1
-        minReplicas: 0
+        minReplicas: 1
         maxReplicas: 5
         containers:
         - name: kserve-container

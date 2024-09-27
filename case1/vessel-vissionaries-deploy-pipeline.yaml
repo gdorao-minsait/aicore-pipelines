@@ -22,7 +22,7 @@ spec:
          type: string
          description: model name
     artifacts:
-      - name: cvmodel-artifact
+      - name: cvmodel
   template:
     apiVersion: "serving.kserve.io/v1beta1"
     metadata:

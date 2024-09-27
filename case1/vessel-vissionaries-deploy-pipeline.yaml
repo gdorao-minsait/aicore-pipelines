@@ -33,7 +33,7 @@ spec:
       labels: |
         ai.sap.com/resourcePlan: starter
     spec: |
-      predictor:d
+      predictor:
         imagePullSecrets:
         - name: case1
         minReplicas: 0
@@ -48,4 +48,4 @@ spec:
               protocol: TCP
           env:
             - name: STORAGE_URI
-              value: "/path/to/your/artifact"
+              value: "{{inputs.artifacts.cvmodel}}"

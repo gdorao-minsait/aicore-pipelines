@@ -40,7 +40,7 @@ spec:
         maxReplicas: 5
         containers:
         - name: vessel-vissionaries-detect-serve-container
-          image: "docker.io/gdoraominsait/vessel-visionaries-detect"
+          image: "docker.io/gdoraominsait/vessel-visionaries-detect:0.0.1"
           ports:
             - containerPort: 9001
               protocol: TCP

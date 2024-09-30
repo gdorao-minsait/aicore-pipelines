@@ -6,7 +6,7 @@ metadata:
     scenarios.ai.sap.com/name: "Case1 Bottle Detection Scenario" # Scenario name should be the use case
     scenarios.ai.sap.com/description: "Image detection with bottles of Estrella Galicia"
 
-    executables.ai.sap.com/name: "Case1 model training" # Executable name should describe the workflow in the use case  
+    executables.ai.sap.com/name: "case1-model-training" # Executable name should describe the workflow in the use case  
     executables.ai.sap.com/description: "Training CV model with Estrella Galicia dataset"
     
     artifacts.ai.sap.com/case1dataset.kind: "dataset" # Helps in suggesting the kind of inputs that can be attached.

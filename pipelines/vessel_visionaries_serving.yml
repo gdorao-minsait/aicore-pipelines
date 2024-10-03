@@ -9,14 +9,10 @@ metadata:
     executables.ai.sap.com/name: "case1-model-serving" # Executable name should describe the workflow in the use case  
     executables.ai.sap.com/description: "Serving CV model with Estrella Galicia dataset"
 
-    artifacts.ai.sap.com/case1model.kind: "model" # Suggest the kind of artifact to input.
   labels:
     scenarios.ai.sap.com/id: "case1-detection-scenario"
-    ai.sap.com/version: "0.1"
+    ai.sap.com/version: "0.2"
 spec:
-  inputs:
-    artifacts:
-      - name: case1model # placeholder name, do not add `-` in value use only alphanumeric chars
   template:
     apiVersion: "serving.kserve.io/v1beta1"
     metadata:
@@ -29,19 +25,13 @@ spec:
     spec: |
       predictor:
         imagePullSecrets:
-          - name: case1   # your docker registry secret
+          - name: case1
         minReplicas: 1
         maxReplicas: 5    # how much to scale
         containers:
         - name: kserve-container
-          image: docker.io/python:latest
+          image: docker.io/gdoraominsait/vessel_visionaries_serve:0.1
           ports:
             - containerPort: 9001    # customizable port
               protocol: TCP
-          command: ["/bin/sh", "-c"]
-          args:
-            - >
-              set -e && echo "Starting" && gunicorn --chdir /app/src main:app -b 0.0.0.0:9001 # filename `main` flask variable `app`
-          env:
-            - name: STORAGE_URI # Required
-              value: "{{inputs.artifacts.case1model}}" # Required reference from artifact name, see above
+          command: ["/bin/sh", "-c", "python /app/src/main.py"]

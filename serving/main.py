@@ -4,12 +4,14 @@ from PIL import Image
 from ultralytics import YOLO
 import tempfile
 from PIL.ExifTags import TAGS, GPSTAGS
+import numpy as np
 
 # Creates Flask serving engine
 app = Flask(__name__)
 
 model = None
 appHasRunBefore = False
+version = "v0.4"
 
 def correct_image_orientation(image):
     try:
@@ -98,25 +100,26 @@ def init():
             raise FileNotFoundError(f"Model file not found at {model_path}")
         
         model = YOLO(model_path)  # Load the YOLO model using ultralytics
-        appHasRunBefore = True
-        print("Model loaded successfully.")
-        return None
+        
+        # Warm-up inference
+        dummy_image = np.zeros((640, 640, 3), dtype=np.uint8)  # Create a blank image
+        model(dummy_image)  # Perform a dummy inference
 
+        appHasRunBefore = True
+        print("Model loaded successfully and warmed up.")
 
 @app.route("/v1/check", methods=["GET"])
 def status():
     global model
     if model is None:
-        return "Flask Code: Model was not loaded.", 500
+        return f"Vessel Visionaries {version}. Flask Code: Model was not loaded.", 500
     else:
-        return "Flask Code: Model loaded successfully.", 200
+        return f"Vessel Visionaries {version}. Flask Code: Model loaded successfully.", 200
 
 
 @app.route("/v1/detect", methods=["POST"])
 def predict():
     global model
-    print("Docker image version is 0.1")
-
     if model is None:
         return "Flask Code: Model was not loaded.", 500
 
@@ -143,18 +146,8 @@ def predict():
         image.save(temp_image_path)  # Save the uploaded image to the temp file
         
         # Perform YOLO inference on the saved temp image
-        results = model(temp_image_path, line_width=1, show_labels=True, save=True)  # Run inference on the image
-    
-    # # Process results with confidence threshold
-    # class_counts = {}
-
-    # for result in results:
-    #     for box in result.boxes:
-    #         confidence = box.conf  # Get the confidence score
-    #         if confidence >= confidence_threshold:  # Apply the confidence threshold
-    #             class_id = int(box.cls)
-    #             class_name = model.names[class_id]  # Get the class name from the model
-    #             class_counts[class_name] = class_counts.get(class_name, 0) + 1  # Increment the count for the class
+        # results = model(temp_image_path, line_width=1, show_labels=True, save=True)  # TODO: save detect result in artifact for debugging purposes
+        results = model(temp_image_path, save=False)  # Run inference on the image
 
     # Process results with confidence threshold and check for enclosed boxes
     class_counts = {}
@@ -173,7 +166,7 @@ def predict():
                 # Append the box along with its coordinates, confidence, and class information
                 boxes.append([x1, y1, x2, y2, confidence, class_name])
 
-        # Now, filter out boxes that are completely enclosed within others
+        # Now, filter out boxes that are almost completely enclosed within others (remove false positives)
         non_enclosed_boxes = []
         for i, box1 in enumerate(boxes):
             enclosed = False
@@ -197,5 +190,5 @@ def predict():
 if __name__ == "__main__":
     print("Serving Initializing")
     init()
-    print("Serving Started")
+    print(f"Serving Started. Vessel Visionaries {version}")
     app.run(host="0.0.0.0", debug=True, port=9001)

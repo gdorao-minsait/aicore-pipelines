@@ -1,25 +1,13 @@
 services:
   app:
-    container_name: serving_yolo
-    image: gdoraominsait/vessel_visionaries_serve:0.2
+    container_name: vessel_visionaries_serve
+    image: gdoraominsait/vessel_visionaries_serve:0.4
     build:
       context: .
       dockerfile: Dockerfile
-    # environment:
-      # - NVIDIA_VISIBLE_DEVICES=all
-      # - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     command: ["/bin/sh", "-c", "python /app/src/main.py"]
     volumes:
       - ../training/app/model:/mnt/models
       - ../training/app/runs:/app/src/runs
     ports:
       - "9001:9001"
-    # deploy:
-    #   resources:
-    #     limits:
-    #       memory: 32g
-    #     reservations:
-    #       devices:
-    #         - capabilities: [gpu]  # Reserve GPU
-    # shm_size: 32g  # Increase shared memory size
-    # runtime: nvidia  # Enable GPU for the container

@@ -103,7 +103,7 @@ def init():
         return None
 
 
-@app.route("/check", methods=["GET"])
+@app.route("/v1/check", methods=["GET"])
 def status():
     global model
     if model is None:
@@ -112,7 +112,7 @@ def status():
         return "Flask Code: Model loaded successfully.", 200
 
 
-@app.route("/detect", methods=["POST"])
+@app.route("/v1/detect", methods=["POST"])
 def predict():
     global model
     print("Docker image version is 0.1")

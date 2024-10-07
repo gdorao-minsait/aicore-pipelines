@@ -1,7 +1,7 @@
 services:
   app:
     container_name: serving_yolo
-    image: gdoraominsait/vessel_visionaries_serve:0.1
+    image: gdoraominsait/vessel_visionaries_serve:0.2
     build:
       context: .
       dockerfile: Dockerfile

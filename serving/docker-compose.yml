@@ -1,13 +1,13 @@
 services:
   app:
     container_name: vessel_visionaries_serve
-    image: gdoraominsait/vessel_visionaries_serve:0.4
+    image: gdoraominsait/vessel_visionaries_serve:0.5
     build:
       context: .
       dockerfile: Dockerfile
     command: ["/bin/sh", "-c", "python /app/src/main.py"]
     volumes:
       - ../training/app/model:/mnt/models
-      - ../training/app/runs:/app/src/runs
+      - ../training/app/runs:/runs
     ports:
       - "9001:9001"

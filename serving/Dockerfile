@@ -22,3 +22,5 @@ RUN chgrp -R nogroup /app && \
 # DEBUG: remove. This is to copy the model and avoid placing artifacts in the configuration
 RUN mkdir -p /mnt/models
 COPY yolo_model.pt /mnt/models/yolo_model.pt
+
+RUN pip3 install fastapi uvicorn python-multipart

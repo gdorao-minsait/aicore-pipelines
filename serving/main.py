@@ -1,17 +1,20 @@
 import os
-from flask import Flask, request, jsonify
+from fastapi import FastAPI, HTTPException, Form, UploadFile, File
 from PIL import Image
 from ultralytics import YOLO
 import tempfile
 from PIL.ExifTags import TAGS, GPSTAGS
 import numpy as np
+import base64
+from io import BytesIO
+import logging
 
-# Creates Flask serving engine
-app = Flask(__name__)
+# Creates FastAPI serving engine
+app = FastAPI()
 
 model = None
 appHasRunBefore = False
-version = "v0.4"
+version = "v0.5"
 
 def correct_image_orientation(image):
     try:
@@ -84,8 +87,6 @@ def is_almost_enclosed(box1, box2, threshold=0.9):
     return False
 
 
-
-@app.before_request
 def init():
     """
     Load YOLO model for inference.
@@ -103,51 +104,62 @@ def init():
         
         # Warm-up inference
         dummy_image = np.zeros((640, 640, 3), dtype=np.uint8)  # Create a blank image
-        model(dummy_image)  # Perform a dummy inference
+        model(dummy_image, verbose=False, save=False)  # Perform a dummy inference
 
         appHasRunBefore = True
         print("Model loaded successfully and warmed up.")
 
-@app.route("/v1/check", methods=["GET"])
+@app.get("/v1/check")
 def status():
     global model
     if model is None:
-        return f"Vessel Visionaries {version}. Flask Code: Model was not loaded.", 500
+        # Raise an HTTPException to return a 500 error with a custom message
+        raise HTTPException(status_code=500, detail=f"Vessel Visionaries {version}: Model was not loaded.")
     else:
-        return f"Vessel Visionaries {version}. Flask Code: Model loaded successfully.", 200
+        return f"Vessel Visionaries {version}: Model loaded successfully."
 
 
-@app.route("/v1/detect", methods=["POST"])
-def predict():
+@app.post("/v1/detect")
+def predict(
+    file: UploadFile = File(None),  # Optional file upload
+    image_base64: str = Form(None),  # Optional base64 encoded image
+    confidence_threshold: float = Form(0.0)  # Optional confidence threshold with a default value):
+):
     global model
     if model is None:
-        return "Flask Code: Model was not loaded.", 500
-
-    if 'file' not in request.files:
-        return "Flask Code: No file part in the request.", 400
+        raise HTTPException(status_code=500, detail=f"Vessel Visionaries {version}: Model was not loaded.")
     
-    file = request.files['file']
+    # Check for image in file or base64 format
+    if file:
+        try:
+            image = Image.open(file.file)  # Open the uploaded image
+            image = correct_image_orientation(image)  # Correct orientation
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Failed to process image file: {str(e)}")
+    elif image_base64:
+        # Handle base64 encoded image
+        try:
+            # Remove the 'data:image/...;base64,' part if it exists
+            if image_base64.startswith("data:"):
+                image_base64 = image_base64.split(",")[1]  # Split and take the second part
 
-    # Extract confidence threshold from request (as JSON or form data)
-    try:
-        confidence_threshold = float(request.form.get('confidence_threshold', 0.0))  # Default to 0.0 if not provided
-    except ValueError:
-        return "Flask Code: Invalid confidence threshold provided.", 400
-
-    # Check if the file is an image
-    try:
-        image = Image.open(file)  # Open the uploaded image
-        image = correct_image_orientation(image)  # Correct orientation
-    except Exception as e:
-        return f"Flask Code: Failed to process image: {str(e)}", 400
+            # Decode the base64 string to bytes
+            image_data = base64.b64decode(image_base64)
+            # Convert bytes to a file-like object and open as an image
+            file = BytesIO(image_data)
+            image = Image.open(file)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Failed to process base64 image: {str(e)}")
+    else:
+        raise HTTPException(status_code=400, detail=f"No file or base64 image provided in the request.")
 
     with tempfile.NamedTemporaryFile(suffix='.jpg', delete=True) as tmp_file:
         temp_image_path = tmp_file.name
         image.save(temp_image_path)  # Save the uploaded image to the temp file
         
         # Perform YOLO inference on the saved temp image
-        # results = model(temp_image_path, line_width=1, show_labels=True, save=True)  # TODO: save detect result in artifact for debugging purposes
-        results = model(temp_image_path, save=False)  # Run inference on the image
+        # results = model(temp_image_path, line_width=1, show_labels=True, save=True, verbose=False)  # TODO: save detect result in artifact for debugging purposes
+        results = model(temp_image_path, save=False, verbose=False)  # Run inference on the image
 
     # Process results with confidence threshold and check for enclosed boxes
     class_counts = {}
@@ -184,11 +196,12 @@ def predict():
 
 
     # Return results as JSON
-    return jsonify(class_counts), 200
+    return class_counts
 
 
 if __name__ == "__main__":
-    print("Serving Initializing")
+    import uvicorn
+    print("Serving Initializing...")
     init()
     print(f"Serving Started. Vessel Visionaries {version}")
-    app.run(host="0.0.0.0", debug=True, port=9001)
+    uvicorn.run(app, host="0.0.0.0", port=9001)

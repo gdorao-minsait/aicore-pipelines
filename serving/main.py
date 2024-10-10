@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI, HTTPException, Form, UploadFile, File
+from fastapi import FastAPI, HTTPException, Form, UploadFile, File, Request
 from PIL import Image
 from ultralytics import YOLO
 import tempfile
@@ -7,14 +7,14 @@ from PIL.ExifTags import TAGS, GPSTAGS
 import numpy as np
 import base64
 from io import BytesIO
-import logging
+import json
 
 # Creates FastAPI serving engine
 app = FastAPI()
 
 model = None
 appHasRunBefore = False
-version = "v0.5"
+version = "v0.54"
 
 def correct_image_orientation(image):
     try:
@@ -120,11 +120,18 @@ def status():
 
 
 @app.post("/v1/detect")
-def predict(
+async def predict(
+    request: Request,
     file: UploadFile = File(None),  # Optional file upload
     image_base64: str = Form(None),  # Optional base64 encoded image
     confidence_threshold: float = Form(0.0)  # Optional confidence threshold with a default value):
 ):
+    if request.headers.get("content-type") == "application/json":
+        # Handle JSON data
+        payload = await request.json()
+        image_base64 = payload.get("image_base64")
+        confidence_threshold = float(payload.get("confidence_threshold", 0.0))
+
     global model
     if model is None:
         raise HTTPException(status_code=500, detail=f"Vessel Visionaries {version}: Model was not loaded.")
@@ -134,6 +141,7 @@ def predict(
         try:
             image = Image.open(file.file)  # Open the uploaded image
             image = correct_image_orientation(image)  # Correct orientation
+            image_format = file.content_type.split("image/")[-1]
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Failed to process image file: {str(e)}")
     elif image_base64:
@@ -148,12 +156,20 @@ def predict(
             # Convert bytes to a file-like object and open as an image
             file = BytesIO(image_data)
             image = Image.open(file)
+            image_format = image.format.lower()  # Get the image format (e.g., 'jpeg', 'png')
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Failed to process base64 image: {str(e)}")
     else:
         raise HTTPException(status_code=400, detail=f"No file or base64 image provided in the request.")
 
-    with tempfile.NamedTemporaryFile(suffix='.jpg', delete=True) as tmp_file:
+
+
+    # Ensure a valid format for saving (default to '.jpg' if not recognized)
+    if image_format not in ['jpeg', 'png', 'jpg']:
+        image_format = 'jpg'
+
+
+    with tempfile.NamedTemporaryFile(suffix=f'.{image_format}', delete=True) as tmp_file:
         temp_image_path = tmp_file.name
         image.save(temp_image_path)  # Save the uploaded image to the temp file
         

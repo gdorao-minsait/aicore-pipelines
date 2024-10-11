@@ -3,18 +3,16 @@ from fastapi import FastAPI, HTTPException, Form, UploadFile, File, Request
 from PIL import Image
 from ultralytics import YOLO
 import tempfile
-from PIL.ExifTags import TAGS, GPSTAGS
+from PIL.ExifTags import TAGS
 import numpy as np
 import base64
 from io import BytesIO
-import json
 
 # Creates FastAPI serving engine
 app = FastAPI()
 
 model = None
-appHasRunBefore = False
-version = "v0.54"
+version = "v1.0"
 
 def correct_image_orientation(image):
     try:
@@ -39,7 +37,6 @@ def correct_image_orientation(image):
     except Exception as e:
         print(f"Error reading EXIF data: {str(e)}")
     return image
-
 
 def is_enclosed(box1, box2):
     """ Check if box1 is completely enclosed by box2. """
@@ -86,28 +83,24 @@ def is_almost_enclosed(box1, box2, threshold=0.9):
         return True
     return False
 
-
 def init():
     """
     Load YOLO model for inference.
     """
     global model
-    global appHasRunBefore
 
-    if not appHasRunBefore:
-        # Load the YOLO model from the /mnt/models directory
-        model_path = '/mnt/models/yolo_model.pt'  # Path to your trained YOLO model
-        if not os.path.exists(model_path):
-            raise FileNotFoundError(f"Model file not found at {model_path}")
-        
-        model = YOLO(model_path)  # Load the YOLO model using ultralytics
-        
-        # Warm-up inference
-        dummy_image = np.zeros((640, 640, 3), dtype=np.uint8)  # Create a blank image
-        model(dummy_image, verbose=False, save=False)  # Perform a dummy inference
+    # Load the YOLO model from the /mnt/models directory
+    model_path = '/mnt/models/yolo_model.pt'  # Path to your trained YOLO model
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"Model file not found at {model_path}")
+    
+    model = YOLO(model_path)  # Load the YOLO model using ultralytics
+    
+    # Warm-up inference
+    dummy_image = np.zeros((640, 640, 3), dtype=np.uint8)  # Create a blank image
+    model(dummy_image, verbose=False, save=False)  # Perform a dummy inference
 
-        appHasRunBefore = True
-        print("Model loaded successfully and warmed up.")
+    print("Model loaded successfully and warmed up.")
 
 @app.get("/v1/check")
 def status():
@@ -117,7 +110,6 @@ def status():
         raise HTTPException(status_code=500, detail=f"Vessel Visionaries {version}: Model was not loaded.")
     else:
         return f"Vessel Visionaries {version}: Model loaded successfully."
-
 
 @app.post("/v1/detect")
 async def predict(

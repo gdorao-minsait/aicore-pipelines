@@ -12,15 +12,13 @@ RUN mkdir -p /app/src
 COPY requirements.txt /app/src/requirements.txt
 RUN pip3 install --no-cache-dir -r /app/src/requirements.txt
 
+# Copy the model. TODO: configure HANAdb and place it in an artifact
+RUN mkdir -p /mnt/models
+COPY yolo_model.pt /mnt/models/yolo_model.pt
+
 # Copy main script
 COPY main.py /app/src/main.py
 
 # Make scripts executable
 RUN chgrp -R nogroup /app && \
     chmod -R 770 /app
-
-# DEBUG: remove. This is to copy the model and avoid placing artifacts in the configuration
-RUN mkdir -p /mnt/models
-COPY yolo_model.pt /mnt/models/yolo_model.pt
-
-RUN pip3 install fastapi uvicorn python-multipart
